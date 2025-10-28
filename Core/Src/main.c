@@ -75,6 +75,7 @@ float motor_elec_angle = 0.0f, motor_rotor_pos = 0.0f, motor_output_pos = 0.0f;
 float motor_pole_pairs = 21.0f;
 // 电机减速比
 float motor_gear_ratio = 12.0f;
+// 最大值宏定义在main.h
 float s_gain_ = 2.0f / (float)(SIN_MAX_VALUE - SIN_MIN_VALUE);
 float s_offset_ = (float)(SIN_MAX_VALUE + SIN_MIN_VALUE) / 2.0f;
 float c_gain_ = 2.0f / (float)(COS_MAX_VALUE - COS_MIN_VALUE);
@@ -124,14 +125,10 @@ int main(void)
   HAL_UART_Receive_DMA(&huart4, tamaga_encoder_data, sizeof(tamaga_encoder_data));
   __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
   
-  for(uint8_t i; i < 20; i++) {
+  // 多摩川编码器设零
+  for (uint8_t i = 0; i < 15; i++) {
      HAL_UART_Transmit_DMA(&huart4, (uint8_t[]){0xC2}, 1);
-     HAL_Delay(50);
-  }
-  
-  for(uint8_t i; i < 20; i++) {
-     HAL_UART_Transmit_DMA(&huart4, (uint8_t[]){0x62}, 1);
-     HAL_Delay(50);
+     HAL_Delay(1);
   }
   
   // 多通道同步采集线性霍尔数据

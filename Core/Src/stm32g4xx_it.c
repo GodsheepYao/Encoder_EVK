@@ -255,6 +255,7 @@ void UART4_IRQHandler(void)
           encoder_abs = (((uint32_t)tamaga_encoder_data[4] << 16) | 
                                 ((uint32_t)tamaga_encoder_data[3] << 8) | 
                                 ((uint32_t)tamaga_encoder_data[2]));
+          // 编码器端输出，单位：度
           encoder_elec_angle = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f * motor_gear_ratio * motor_pole_pairs, 360.0f);
           encoder_rotor_pos = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f * motor_gear_ratio, 360.0f);
           encoder_output_pos = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f, 360.0f);
@@ -274,7 +275,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         HAL_UART_Transmit_DMA(&huart4, (uint8_t[]){0x02}, 1);
     }
 }
-
+ 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
     if (hadc->Instance == ADC1)
@@ -289,23 +290,22 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
         static float cos_filter = 0.0f;
         UTILS_LP_FAST(sin_filter, mod_sin, 0.9f);
         UTILS_LP_FAST(cos_filter, mod_cos, 0.9f);
-        // 相位差补偿，保证相位差90度，只改cos相位，
-        float sin_corrected = sin_filter;
-        float cos_corrected = (cos_filter + sin_filter);
+        // 正余弦上电偏置
+        static float offset = 0.0f;
         // 反正切
-        sincos_angle = utils_fast_atan2(sin_corrected, cos_corrected);
-        // 连续化多圈
+        sincos_angle = utils_fast_atan2(sin_filter, cos_filter) - offset;
         static float last_angle = 0.0f;
         static bool initialized = false;
         if (!initialized) {
             last_angle = sincos_angle;  // 第一次运行时设置值
+            offset = sincos_angle;
             initialized = true;
         }
-        // 增量累加，单位：电角度rad
+        // 连续化多圈，增量累加，单位：电角度rad
         float diff = utils_angle_difference_rad(sincos_angle, last_angle);
         last_angle = sincos_angle;
         serial_angle += diff;
-        
+        // 电机端输出，单位：度
         motor_elec_angle = wrap_pm(sincos_angle / (float)(2.0f * M_PI) * 360.0f, 360.0f);
         motor_rotor_pos = wrap_pm(serial_angle / (float)(2.0f * M_PI * motor_pole_pairs) * 360.0f, 360.0f);
         motor_output_pos = wrap_pm(serial_angle / (float)(2.0f * M_PI * motor_pole_pairs * motor_gear_ratio) * 360.0f, 360.0f);

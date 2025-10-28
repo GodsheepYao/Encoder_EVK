@@ -70,10 +70,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
-#define SIN_MIN_VALUE 952 
-#define SIN_MAX_VALUE 3165
-#define COS_MIN_VALUE 1085
-#define COS_MAX_VALUE 3007
+#define SIN_MIN_VALUE 1101 
+#define SIN_MAX_VALUE 3004
+#define COS_MIN_VALUE 933
+#define COS_MAX_VALUE 3175
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
