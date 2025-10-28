@@ -46,7 +46,17 @@
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
-
+// Wrap value to range.
+// With default rounding mode (round to nearest),
+// the result will be in range -y/2 to y/2
+inline float wrap_pm(float x, float y) {
+#ifdef FPU_FPV4
+    float intval = (float)round_int(x / y);
+#else
+    float intval = nearbyintf(x / y);
+#endif
+    return x - intval * y;
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -241,6 +251,14 @@ void UART4_IRQHandler(void)
       __HAL_UART_CLEAR_FLAG(&huart4,USART_ISR_CTSIF);
 
       HAL_UART_DMAStop(&huart4);
+      if (tamaga_encoder_data[0] == 0x02) {
+          encoder_abs = (((uint32_t)tamaga_encoder_data[4] << 16) | 
+                                ((uint32_t)tamaga_encoder_data[3] << 8) | 
+                                ((uint32_t)tamaga_encoder_data[2]));
+          encoder_elec_angle = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f * motor_gear_ratio * motor_pole_pairs, 360.0f);
+          encoder_rotor_pos = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f * motor_gear_ratio, 360.0f);
+          encoder_output_pos = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f, 360.0f);
+      }
       HAL_UART_Receive_DMA(&huart4, tamaga_encoder_data, sizeof(tamaga_encoder_data));
   }
   /* USER CODE END UART4_IRQn 0 */
@@ -251,6 +269,46 @@ void UART4_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  HAL_UART_Transmit_DMA(&huart4, (uint8_t[]){0x02}, 1);
+    if (htim->Instance == TIM1) {
+        // 定时器1更新回调，串口请求多摩川编码器数据
+        HAL_UART_Transmit_DMA(&huart4, (uint8_t[]){0x02}, 1);
+    }
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+    if (hadc->Instance == ADC1)
+    {
+        const uint16_t sin_cnt = ADC_Value[1];
+        const uint16_t cos_cnt = ADC_Value[0];
+         // 归一化
+        float mod_sin = (sin_cnt - s_offset_) * s_gain_;
+        float mod_cos = (cos_cnt - c_offset_) * c_gain_;
+        // 滤波
+        static float sin_filter = 0.0f;
+        static float cos_filter = 0.0f;
+        UTILS_LP_FAST(sin_filter, mod_sin, 0.9f);
+        UTILS_LP_FAST(cos_filter, mod_cos, 0.9f);
+        // 相位差补偿，保证相位差90度，只改cos相位，
+        float sin_corrected = sin_filter;
+        float cos_corrected = (cos_filter + sin_filter);
+        // 反正切
+        sincos_angle = utils_fast_atan2(sin_corrected, cos_corrected);
+        // 连续化多圈
+        static float last_angle = 0.0f;
+        static bool initialized = false;
+        if (!initialized) {
+            last_angle = sincos_angle;  // 第一次运行时设置值
+            initialized = true;
+        }
+        // 增量累加，单位：电角度rad
+        float diff = utils_angle_difference_rad(sincos_angle, last_angle);
+        last_angle = sincos_angle;
+        serial_angle += diff;
+        
+        motor_elec_angle = wrap_pm(sincos_angle / (float)(2.0f * M_PI) * 360.0f, 360.0f);
+        motor_rotor_pos = wrap_pm(serial_angle / (float)(2.0f * M_PI * motor_pole_pairs) * 360.0f, 360.0f);
+        motor_output_pos = wrap_pm(serial_angle / (float)(2.0f * M_PI * motor_pole_pairs * motor_gear_ratio) * 360.0f, 360.0f);
+    }
 }
 /* USER CODE END 1 */
