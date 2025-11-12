@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "dma.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -62,19 +63,27 @@ void SystemClock_Config(void);
 uint8_t tamaga_encoder_data[6] = {0};
 // ADC采样值
 __ALIGN_BEGIN uint16_t ADC_Value[14] __ALIGN_END;
+// SPI采集磁编原始数据
+uint16_t spi_rx_buffer = 0;
+// 磁编原始值
+float magnetic_abs = 0.0f;
 // 多摩川编码器原始值
 uint32_t encoder_abs = 0.0f;
 // 多摩川编码器电角度，转子侧位置，输出轴位置数据，单位：度
 float encoder_elec_angle = 0.0f, encoder_rotor_pos = 0.0f, encoder_output_pos = 0.0f;
 // 正余弦角度，单位：rad
 float sincos_angle = 0.0f, serial_angle = 0.0f;
-// 电机电角度，转子侧位置，输出轴位置数据，单位：度
-float motor_elec_angle = 0.0f, motor_rotor_pos = 0.0f, motor_output_pos = 0.0f;
+// 正余弦电角度，转子侧位置，输出轴位置数据，单位：度
+float sincos_elec_angle = 0.0f, sincos_rotor_pos = 0.0f, sincos_output_pos = 0.0f;
+// 磁编电角度，转子侧位置，输出轴位置数据，单位：度
+float magnetic_elec_angle = 0.0f, magnetic_rotor_pos = 0.0f, magnetic_output_pos = 0.0f;
+// 差值
+float encoder_sincos_diff = 0.0f, encoder_magnetic_diff = 0.0f, sincos_magnetic_diff = 0.0f;
 /*********************** 以下需要根据电机实际情况配置 ***********************/
 // 电机极对数
-float motor_pole_pairs = 21.0f;
+float motor_pole_pairs = 5.0f;
 // 电机减速比
-float motor_gear_ratio = 12.0f;
+float motor_gear_ratio = 1.0f;
 // 最大值宏定义在main.h
 float s_gain_ = 2.0f / (float)(SIN_MAX_VALUE - SIN_MIN_VALUE);
 float s_offset_ = (float)(SIN_MAX_VALUE + SIN_MIN_VALUE) / 2.0f;
@@ -117,13 +126,14 @@ int main(void)
   MX_ADC2_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   // 启动串口DMA中断接收多摩川编码器
   HAL_RS485Ex_Init(&huart4, UART_DE_POLARITY_HIGH, 0, 0);
-  HAL_NVIC_DisableIRQ(DMA1_Channel1_IRQn);
-  HAL_NVIC_DisableIRQ(DMA1_Channel2_IRQn);
   HAL_UART_Receive_DMA(&huart4, tamaga_encoder_data, sizeof(tamaga_encoder_data));
   __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
+  
+  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&spi_rx_buffer, sizeof(spi_rx_buffer));
   
   // 多摩川编码器设零
   for (uint8_t i = 0; i < 15; i++) {
@@ -135,8 +145,10 @@ int main(void)
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
   HAL_ADCEx_MultiModeStart_DMA(&hadc1, (uint32_t*)ADC_Value, 1);
-    
+  
+  // TIM1开启更新中断发送编码器请求并重置TIM2计数
   HAL_TIM_Base_Start_IT(&htim1);
+  // TIM2触发ADC双通道采样
   HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_2);	
   /* USER CODE END 2 */
 

@@ -38,10 +38,14 @@ extern "C" {
 /* USER CODE BEGIN ET */
 extern uint8_t tamaga_encoder_data[6];
 extern uint16_t ADC_Value[14];
+extern uint16_t spi_rx_buffer;
+extern float magnetic_abs;
 extern uint32_t encoder_abs;
 extern float encoder_elec_angle, encoder_rotor_pos, encoder_output_pos;
 extern float sincos_angle, serial_angle;
-extern float motor_elec_angle, motor_rotor_pos, motor_output_pos;
+extern float sincos_elec_angle, sincos_rotor_pos, sincos_output_pos;
+extern float magnetic_elec_angle, magnetic_rotor_pos, magnetic_output_pos;
+extern float encoder_sincos_diff, encoder_magnetic_diff, sincos_magnetic_diff;
 extern float motor_pole_pairs;
 extern float motor_gear_ratio;
 extern float s_gain_;
