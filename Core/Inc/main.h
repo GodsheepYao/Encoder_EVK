@@ -38,7 +38,7 @@ extern "C" {
 /* USER CODE BEGIN ET */
 extern uint8_t tamaga_encoder_data[6];
 extern uint16_t ADC_Value[14];
-extern uint16_t spi_rx_buffer;
+extern uint16_t spi_rx_buffer[2];
 extern float magnetic_abs;
 extern uint32_t encoder_abs;
 extern float encoder_elec_angle, encoder_rotor_pos, encoder_output_pos;

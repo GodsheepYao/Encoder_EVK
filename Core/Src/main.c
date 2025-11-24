@@ -64,7 +64,7 @@ uint8_t tamaga_encoder_data[6] = {0};
 // ADC采样值
 __ALIGN_BEGIN uint16_t ADC_Value[14] __ALIGN_END;
 // SPI采集磁编原始数据
-uint16_t spi_rx_buffer = 0;
+uint16_t spi_rx_buffer[2] = {0};
 // 磁编原始值
 float magnetic_abs = 0.0f;
 // 多摩川编码器原始值
@@ -133,7 +133,7 @@ int main(void)
   HAL_UART_Receive_DMA(&huart4, tamaga_encoder_data, sizeof(tamaga_encoder_data));
   __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
   
-  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&spi_rx_buffer, 1);
+  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&spi_rx_buffer, 2);
   
   // 多摩川编码器设零
   for (uint8_t i = 0; i < 15; i++) {

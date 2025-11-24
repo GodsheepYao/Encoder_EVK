@@ -415,7 +415,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI1) {
         // 磁编原始值
-        magnetic_abs = spi_rx_buffer;
+        magnetic_abs = (spi_rx_buffer[0] << 8) | (spi_rx_buffer[1] >> 8);
         // 磁编上电偏置
         static float offset = 0.0f;
         static bool initialized = false;
