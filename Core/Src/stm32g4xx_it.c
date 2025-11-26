@@ -287,6 +287,10 @@ void UART4_IRQHandler(void)
             encoder_rotor_pos = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f * motor_gear_ratio, 360.0f);
             encoder_output_pos = wrap_pm((float)encoder_abs / 8388607.0f * 360.0f, 360.0f);
             
+            for(uint8_t i = 0; i < 100; i++) {
+                HAL_GPIO_WritePin(magnetic_spi_GPIO_Port, magnetic_spi_Pin, GPIO_PIN_SET);
+            }
+            HAL_GPIO_WritePin(magnetic_spi_GPIO_Port, magnetic_spi_Pin, GPIO_PIN_RESET);
             // 多摩川和正余弦的差值
             encoder_sincos_diff = utils_angle_difference(encoder_output_pos, sincos_output_pos);
         }
@@ -406,6 +410,7 @@ float compensation_data[360] = {
     0.033000f, 0.027274f, 0.039881f, 0.006299f, -0.017423f, -0.042722f
 };
 
+float filter_diff = 0;
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI1) {
@@ -427,9 +432,15 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
         magnetic_rotor_pos = wrap_pm((float)magnetic_abs / 65535.0f * 360.0f * motor_gear_ratio, 360.0f);
         magnetic_output_pos = wrap_pm((float)magnetic_abs / 65535.0f * 360.0f /* + compensation_data[index] */, 360.0f);
         
+        for(uint8_t i = 0; i < 100; i++) {
+            HAL_GPIO_WritePin(magnetic_spi_GPIO_Port, magnetic_spi_Pin, GPIO_PIN_SET);
+        }
+        HAL_GPIO_WritePin(magnetic_spi_GPIO_Port, magnetic_spi_Pin, GPIO_PIN_RESET);
         // 和磁编的差值
         encoder_magnetic_diff = utils_angle_difference(encoder_output_pos, magnetic_output_pos);
         sincos_magnetic_diff = utils_angle_difference(sincos_output_pos, magnetic_output_pos);
+        
+        UTILS_LP_FAST(filter_diff, encoder_magnetic_diff, 0.005f);
     }
 }
 /* USER CODE END 1 */

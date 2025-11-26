@@ -133,7 +133,7 @@ int main(void)
   HAL_UART_Receive_DMA(&huart4, tamaga_encoder_data, sizeof(tamaga_encoder_data));
   __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
   
-  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&spi_rx_buffer, sizeof(spi_rx_buffer));
+  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&spi_rx_buffer, 1);
   
   // 多摩川编码器设零
   for (uint8_t i = 0; i < 15; i++) {

@@ -72,6 +72,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define magnetic_spi_Pin GPIO_PIN_9
+#define magnetic_spi_GPIO_Port GPIOC
+#define tamaga_485_Pin GPIO_PIN_8
+#define tamaga_485_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 #define SIN_MIN_VALUE 1101 
