@@ -732,3 +732,21 @@ const float utils_tab_cos_32_2[] = {
 	-1.000000, -0.923880, -0.707107, -0.382683, -0.000000, 0.382683, 0.707107, 0.923880,
 	1.000000, 0.923880, 0.707107, 0.382683, 0.000000, -0.382683, -0.707107, -0.923880,
 	-1.000000, -0.923880, -0.707107, -0.382683, -0.000000, 0.382683, 0.707107, 0.923880};
+
+/**
+ * Get the difference between two angles. Will always be between -range and +range degrees.
+ * @param angle1
+ * The first angle
+ * @param angle2
+ * The second angle
+ * @param range
+ * The range for the angle difference (e.g., 180 for degrees, 360 for full circle)
+ * @return
+ * The difference between the angles
+ */
+float utils_angle_difference_custom(float angle1, float angle2, float range) {
+    float difference = angle1 - angle2;
+    while (difference < -range / 2.0) difference += range;
+    while (difference > range / 2.0) difference -= range;
+    return difference;
+}
