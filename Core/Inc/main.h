@@ -40,6 +40,7 @@ extern uint8_t tamaga_encoder_data[6];
 extern uint16_t ADC_Value[14];
 extern uint16_t spi1_rx_buffer, spi2_rx_buffer;
 extern float main_magnetic_abs, sec_magnetic_abs;
+extern float magnetic_serial_abs;
 extern uint32_t tamagawa_abs;
 extern float tamagawa_serial_abs;
 extern float tamagawa_elec_angle, tamagawa_rotor_pos, tamagawa_output_pos;

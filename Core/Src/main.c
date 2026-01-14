@@ -67,9 +67,11 @@ __ALIGN_BEGIN uint16_t ADC_Value[14] __ALIGN_END;
 uint16_t spi1_rx_buffer = 0, spi2_rx_buffer = 0;
 // 磁编原始值
 float main_magnetic_abs = 0.0f, sec_magnetic_abs = 0.0f;
+// 磁编原始值，连续化多圈
+float magnetic_serial_abs = 0.0f;
 // 多摩川编码器原始值
 uint32_t tamagawa_abs = 0;
-// 多摩川编码器原始值，连续化多圈，单位：度
+// 多摩川编码器原始值，连续化多圈
 float tamagawa_serial_abs = 0.0f;
 // 多摩川编码器电角度，转子侧位置，输出轴位置数据，单位：度
 float tamagawa_elec_angle = 0.0f, tamagawa_rotor_pos = 0.0f, tamagawa_output_pos = 0.0f;

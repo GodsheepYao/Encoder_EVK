@@ -61,7 +61,7 @@ inline float wrap_pm(float x, float y) {
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+float tamagawa_elec_rad = 0;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -282,6 +282,7 @@ void UART4_IRQHandler(void)
             tamagawa_rotor_pos = wrap_pm((float)tamagawa_serial_abs / 8388608.0f * 360.0f * motor_gear_ratio, 360.0f);
             tamagawa_output_pos = wrap_pm((float)tamagawa_abs / 8388608.0f * 360.0f, 360.0f);
             
+            tamagawa_elec_rad = wrap_pm((float)tamagawa_serial_abs / 8388608.0f * 2.0f * M_PI * motor_gear_ratio * motor_pole_pairs, 2.0f * M_PI);
 //            for(uint8_t i = 0; i < 100; i++) {
 //                HAL_GPIO_WritePin(magnetic_spi_GPIO_Port, magnetic_spi_Pin, GPIO_PIN_SET);
 //            }
@@ -346,7 +347,8 @@ float filter_diff = 0;
 float main_gear_map = 0, sec_gear_map = 0;
 float pos_combined = 0, encoder_gear = 0;
 float encoder_gear_diff = 0;
-float magnetic_serial_abs = 0;
+float magnetic_elec_sin = 0;
+float magnetic_elec_cos = 0;
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI1) {
@@ -370,7 +372,9 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
         magnetic_elec_angle = wrap_pm((float)(magnetic_serial_abs) / MAIN_ENCODER_CPR * motor_pole_pairs * 360.0f, 360.0f);
         magnetic_rotor_pos = wrap_pm((float)(main_magnetic_abs) / MAIN_ENCODER_CPR * 360.0f, 360.0f);
         magnetic_output_pos = wrap_pm((float)(magnetic_serial_abs) / (MAIN_ENCODER_CPR * motor_gear_ratio) * 360.0f, 360.0f);
-        
+        float magnetic_elec_rad = wrap_pm((float)(magnetic_serial_abs) / MAIN_ENCODER_CPR * motor_pole_pairs * 2.0f * M_PI, 2.0f * M_PI);
+        magnetic_elec_sin = utils_fast_sin(magnetic_elec_rad);
+        magnetic_elec_cos = utils_fast_cos(magnetic_elec_rad);
         // for(uint8_t i = 0; i < 100; i++) {
         //     HAL_GPIO_WritePin(magnetic_spi_GPIO_Port, magnetic_spi_Pin, GPIO_PIN_SET);
         // }
@@ -384,15 +388,16 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
         
         // 副编码器原始值
         sec_magnetic_abs = (INVERT_SEC_DIRECTION) ? SEC_ENCODER_CPR - spi2_rx_buffer : spi2_rx_buffer;
-        // 主副编码器原始值映射齿数
+        // 主副编码器原始值映射齿数（0~65536映射到0~齿数）
         main_gear_map = utils_map(main_magnetic_abs, 0, MAIN_ENCODER_CPR, 0, MAIN_GEAR_RATIO);
         sec_gear_map = utils_map(sec_magnetic_abs, 0, SEC_ENCODER_CPR, 0, SEC_GEAR_RATIO);
-        
+        // 主副齿差值计算
         float sec_main_diff = sec_gear_map - main_gear_map;
+        // 主副齿差值过圈修正
         if (sec_main_diff < 0) {
             sec_main_diff += SEC_GEAR_RATIO;
         }
-
+        // 两齿合成角度互质的圈数=（(b-a）modB）+a/A，其中a,b是角度映射的齿数，A，B为最大齿数
         float pos_combined_origin = fmod(sec_main_diff, SEC_GEAR_RATIO) + main_gear_map / MAIN_GEAR_RATIO;
         static float offset_ = 0.0f;
         static bool initialized_ = false;
@@ -400,6 +405,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
             offset_ = pos_combined_origin;
             initialized_ = true;
         }
+        // 上电置零
         pos_combined_origin -= offset_;
         pos_combined = wrap_pm(pos_combined_origin, SEC_GEAR_RATIO);
 
