@@ -64,13 +64,17 @@ uint8_t tamaga_encoder_data[6] = {0};
 // ADC采样值
 __ALIGN_BEGIN uint16_t ADC_Value[14] __ALIGN_END;
 // SPI采集磁编原始数据
-uint16_t spi_rx_buffer[2] = {0};
+uint16_t spi1_rx_buffer = 0, spi2_rx_buffer = 0;
 // 磁编原始值
-float magnetic_abs = 0.0f;
+float main_magnetic_abs = 0.0f, sec_magnetic_abs = 0.0f;
+// 磁编原始值，连续化多圈
+float magnetic_serial_abs = 0.0f;
 // 多摩川编码器原始值
-uint32_t encoder_abs = 0.0f;
+uint32_t tamagawa_abs = 0;
+// 多摩川编码器原始值，连续化多圈
+float tamagawa_serial_abs = 0.0f;
 // 多摩川编码器电角度，转子侧位置，输出轴位置数据，单位：度
-float encoder_elec_angle = 0.0f, encoder_rotor_pos = 0.0f, encoder_output_pos = 0.0f;
+float tamagawa_elec_angle = 0.0f, tamagawa_rotor_pos = 0.0f, tamagawa_output_pos = 0.0f;
 // 正余弦角度，单位：rad
 float sincos_angle = 0.0f, serial_angle = 0.0f;
 // 正余弦电角度，转子侧位置，输出轴位置数据，单位：度
@@ -78,12 +82,12 @@ float sincos_elec_angle = 0.0f, sincos_rotor_pos = 0.0f, sincos_output_pos = 0.0
 // 磁编电角度，转子侧位置，输出轴位置数据，单位：度
 float magnetic_elec_angle = 0.0f, magnetic_rotor_pos = 0.0f, magnetic_output_pos = 0.0f;
 // 差值
-float encoder_sincos_diff = 0.0f, encoder_magnetic_diff = 0.0f, sincos_magnetic_diff = 0.0f;
+float tamagawa_sincos_diff = 0.0f, tamagawa_magnetic_diff = 0.0f, sincos_magnetic_diff = 0.0f;
 /*********************** 以下需要根据电机实际情况配置 ***********************/
 // 电机极对数
-float motor_pole_pairs = 5.0f;
+float motor_pole_pairs = 14.0f;
 // 电机减速比
-float motor_gear_ratio = 1.0f;
+float motor_gear_ratio = 7.75f;
 // 最大值宏定义在main.h
 float s_gain_ = 2.0f / (float)(SIN_MAX_VALUE - SIN_MIN_VALUE);
 float s_offset_ = (float)(SIN_MAX_VALUE + SIN_MIN_VALUE) / 2.0f;
@@ -127,13 +131,15 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_SPI1_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
   // 启动串口DMA中断接收多摩川编码器
   HAL_RS485Ex_Init(&huart4, UART_DE_POLARITY_HIGH, 0, 0);
   HAL_UART_Receive_DMA(&huart4, tamaga_encoder_data, sizeof(tamaga_encoder_data));
   __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE);
   
-  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&spi_rx_buffer, 2);
+  HAL_SPI_Receive_DMA(&hspi1, (uint8_t*)&spi1_rx_buffer, 1);
+  HAL_SPI_Receive_DMA(&hspi2, (uint8_t*)&spi2_rx_buffer, 1);
   
   // 多摩川编码器设零
   for (uint8_t i = 0; i < 15; i++) {

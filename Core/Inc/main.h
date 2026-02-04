@@ -38,14 +38,16 @@ extern "C" {
 /* USER CODE BEGIN ET */
 extern uint8_t tamaga_encoder_data[6];
 extern uint16_t ADC_Value[14];
-extern uint16_t spi_rx_buffer[2];
-extern float magnetic_abs;
-extern uint32_t encoder_abs;
-extern float encoder_elec_angle, encoder_rotor_pos, encoder_output_pos;
+extern uint16_t spi1_rx_buffer, spi2_rx_buffer;
+extern float main_magnetic_abs, sec_magnetic_abs;
+extern float magnetic_serial_abs;
+extern uint32_t tamagawa_abs;
+extern float tamagawa_serial_abs;
+extern float tamagawa_elec_angle, tamagawa_rotor_pos, tamagawa_output_pos;
 extern float sincos_angle, serial_angle;
 extern float sincos_elec_angle, sincos_rotor_pos, sincos_output_pos;
 extern float magnetic_elec_angle, magnetic_rotor_pos, magnetic_output_pos;
-extern float encoder_sincos_diff, encoder_magnetic_diff, sincos_magnetic_diff;
+extern float tamagawa_sincos_diff, tamagawa_magnetic_diff, sincos_magnetic_diff;
 extern float motor_pole_pairs;
 extern float motor_gear_ratio;
 extern float s_gain_;
@@ -82,6 +84,15 @@ void Error_Handler(void);
 #define SIN_MAX_VALUE 3004
 #define COS_MIN_VALUE 933
 #define COS_MAX_VALUE 3175
+
+#define MAIN_GEAR_RATIO 32
+#define SEC_GEAR_RATIO 31
+
+#define MAIN_ENCODER_CPR 65536
+#define SEC_ENCODER_CPR 65536
+
+#define INVERT_MAIN_DIRECTION 0
+#define INVERT_SEC_DIRECTION 1
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

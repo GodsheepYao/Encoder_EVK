@@ -28,6 +28,7 @@ float utils_map_angle(float angle, float min, float max);
 void utils_deadband(float *value, float tres, float max);
 float utils_angle_difference(float angle1, float angle2);
 float utils_angle_difference_rad(float angle1, float angle2);
+float utils_angle_difference_custom(float angle1, float angle2, float range);
 float utils_avg_angles_rad_fast(float *angles, float *weights, int angles_num);
 float utils_interpolate_angles_rad(float a1, float a2, float weight_a1);
 float utils_middle_of_3(float a, float b, float c);
