@@ -699,6 +699,11 @@
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32g4xx_hal_msp.c</FilePath>
             </File>
+            <File>
+              <FileName>utils_math.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\USER\utils_math.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
